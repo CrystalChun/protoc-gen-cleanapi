@@ -1,0 +1,77 @@
+/*
+Copyright (c) 2026 Red Hat, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+the License. You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+specific language governing permissions and limitations under the License.
+*/
+
+syntax = "proto3";
+
+package api.v1;
+
+import "cleanapi/cleanapi.proto";
+import "google/api/annotations.proto";
+
+option (cleanapi.file).package = "public_api.v1";
+option (cleanapi.file).remove_http_options = true;
+
+// User represents a user in the system.
+message User {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+  string internal_field = 4 [(cleanapi.field).private = true];
+}
+
+// UserRequest is used to request user information.
+message UserRequest {
+  string user_id = 1;
+}
+
+// UserService provides user management operations with HTTP transcoding.
+service UserService {
+  // GetUser retrieves a user by ID with REST endpoint.
+  rpc GetUser(UserRequest) returns (User) {
+    option (google.api.http) = {
+      get: "/v1/users/{user_id}"
+    };
+  }
+
+  // CreateUser creates a new user with REST endpoint.
+  rpc CreateUser(User) returns (User) {
+    option (google.api.http) = {
+      post: "/v1/users"
+      body: "*"
+    };
+  }
+
+  // UpdateUser updates a user with REST endpoint.
+  rpc UpdateUser(User) returns (User) {
+    option (google.api.http) = {
+      put: "/v1/users/{id}"
+      body: "*"
+    };
+  }
+
+  // DeleteUser deletes a user with REST endpoint.
+  rpc DeleteUser(UserRequest) returns (User) {
+    option (google.api.http) = {
+      delete: "/v1/users/{user_id}"
+    };
+  }
+
+  // InternalMethod is private and should be removed entirely.
+  rpc InternalMethod(UserRequest) returns (User) {
+    option (cleanapi.method).private = true;
+    option (google.api.http) = {
+      post: "/v1/internal/users"
+      body: "*"
+    };
+  }
+}

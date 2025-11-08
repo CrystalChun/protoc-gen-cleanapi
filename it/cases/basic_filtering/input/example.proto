@@ -1,0 +1,113 @@
+/*
+Copyright (c) 2026 Red Hat, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+the License. You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+specific language governing permissions and limitations under the License.
+*/
+
+syntax = "proto3";
+
+package fulfillment.v1;
+
+import "cleanapi/cleanapi.proto";
+
+option (cleanapi.file).package = "public.v1";
+
+// PublicMessage is a public message that should be included in the public API.
+message PublicMessage {
+  // Public field that should be included.
+  string id = 1;
+
+  // Public field that should be included.
+  string name = 2;
+
+  // Private field that should be excluded from the public API.
+  string internal_status = 3 [(cleanapi.field).private = true];
+
+  // Another private field that should be excluded.
+  string secret_token = 4 [(cleanapi.field).private = true];
+}
+
+// PrivateMessage should be completely excluded from the public API.
+message PrivateMessage {
+  option (cleanapi.message).private = true;
+
+  string id = 1;
+  string secret_data = 2;
+}
+
+// AnotherPublicMessage is a public message.
+message AnotherPublicMessage {
+  string value = 1;
+}
+
+// PublicEnum is a public enum that should be included in the public API.
+enum PublicEnum {
+  // Default value.
+  PUBLIC_ENUM_UNSPECIFIED = 0;
+
+  // Public value that should be included.
+  PUBLIC_ENUM_ACTIVE = 1;
+
+  // Public value that should be included.
+  PUBLIC_ENUM_INACTIVE = 2;
+
+  // Private value that should be excluded from the public API.
+  PUBLIC_ENUM_INTERNAL = 3 [(cleanapi.value).private = true];
+
+  // Another private value that should be excluded.
+  PUBLIC_ENUM_DEBUG = 4 [(cleanapi.value).private = true];
+}
+
+// PrivateEnum should be completely excluded from the public API.
+enum PrivateEnum {
+  option (cleanapi.enum).private = true;
+
+  PRIVATE_ENUM_UNSPECIFIED = 0;
+  PRIVATE_ENUM_VALUE1 = 1;
+  PRIVATE_ENUM_VALUE2 = 2;
+}
+
+// AnotherPublicEnum is a public enum.
+enum AnotherPublicEnum {
+  ANOTHER_PUBLIC_ENUM_UNSPECIFIED = 0;
+  ANOTHER_PUBLIC_ENUM_VALUE = 1;
+}
+
+// PublicService is a public service that should be included in the public API.
+service PublicService {
+  // Public method that should be included.
+  rpc GetPublicMessage(PublicMessage) returns (PublicMessage);
+
+  // Another public method that should be included.
+  rpc ListPublicMessages(PublicMessage) returns (AnotherPublicMessage);
+
+  // Private method that should be excluded from the public API.
+  rpc GetInternalData(PublicMessage) returns (AnotherPublicMessage) {
+    option (cleanapi.method).private = true;
+  }
+
+  // Another private method that should be excluded.
+  rpc DebugMethod(PublicMessage) returns (PublicMessage) {
+    option (cleanapi.method).private = true;
+  }
+}
+
+// PrivateService should be completely excluded from the public API.
+service PrivateService {
+  option (cleanapi.service).private = true;
+
+  rpc GetSecretData(PrivateMessage) returns (PrivateMessage);
+  rpc UpdateSecretData(PrivateMessage) returns (PrivateMessage);
+}
+
+// AnotherPublicService is a public service.
+service AnotherPublicService {
+  rpc DoSomething(AnotherPublicMessage) returns (AnotherPublicMessage);
+}

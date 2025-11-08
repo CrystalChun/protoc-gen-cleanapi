@@ -1,0 +1,107 @@
+/*
+Copyright (c) 2026 Red Hat, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+the License. You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+specific language governing permissions and limitations under the License.
+*/
+
+// This is a file-level comment at the beginning of the file.
+// It should be preserved because it's not attached to any element.
+
+syntax = "proto3";
+
+package fulfillment.v1;
+
+import "cleanapi/cleanapi.proto";
+
+option (cleanapi.file).package = "public.v1";
+
+/*
+ * This is a standalone block comment between imports and messages.
+ * It should be preserved.
+ */
+
+// Another standalone line comment.
+// This one has multiple lines.
+// All should be preserved.
+
+// PublicMessage is a public message with various comment styles.
+message PublicMessage {
+  // This is a comment for a public field.
+  string id = 1; // End of line comment for public field.
+  
+  /*
+   * Block comment for another public field.
+   */
+  string name = 2;
+  
+  // This comment is for a private field and should be removed.
+  string internal_data = 3 [(cleanapi.field).private = true];
+  
+  // Comment for another public field.
+  string description = 4; // Another end of line comment.
+}
+
+// Standalone comment between messages.
+
+/* Block comment between messages. */
+
+// This comment is attached to a private message, so it should be removed.
+message PrivateMessage {
+  option (cleanapi.message).private = true;
+  
+  // This field comment should also be removed.
+  string secret = 1;
+}
+
+// Standalone comment after private message.
+
+// Comment for a public enum.
+enum Status {
+  // Comment for unspecified value.
+  STATUS_UNSPECIFIED = 0; // End of line comment.
+  
+  // Comment for active status.
+  STATUS_ACTIVE = 1;
+  
+  // This comment is for a private value and should be removed.
+  STATUS_INTERNAL = 2 [(cleanapi.value).private = true];
+  
+  // Comment for inactive status.
+  STATUS_INACTIVE = 3; // End of line comment for enum value.
+}
+
+/*
+ * Standalone block comment between enum and service.
+ * Multiple lines in this block.
+ * All should be preserved.
+ */
+
+// Comment for public service.
+service DataService {
+  // Comment for public method.
+  rpc GetData(PublicMessage) returns (PublicMessage); // End of line comment for method.
+  
+  // This comment is for a private method and should be removed.
+  rpc DebugData(PublicMessage) returns (PublicMessage) {
+    option (cleanapi.method).private = true;
+  }
+  
+  // Comment for another public method.
+  rpc ListData(PublicMessage) returns (PublicMessage);
+}
+
+// Standalone comment at the end of the file.
+
+/*
+ * Another standalone block comment at the end.
+ */
+
+// Final line comment at the very end.
+

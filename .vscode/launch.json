@@ -1,0 +1,29 @@
+{
+        "version": "0.2.0",
+        "configurations": [
+                {
+                        "name": "attach",
+                        "type": "go",
+                        "request": "attach",
+                        "mode": "local",
+                        "processId": "${command:pickGoProcess}"
+                },
+                {
+                        "name": "run",
+                        "type": "go",
+                        "request": "launch",
+                        "mode": "debug",
+                        "program": "${workspaceFolder}",
+                        "env": {
+                                "PROTOC_GEN_PUBLIC_API_READ_REQUEST": "${workspaceFolder}/request.bin",
+                        }
+                },
+                {
+                        "name": "test",
+                        "type": "go",
+                        "request": "launch",
+                        "mode": "test",
+                        "program": "${fileDirname}"
+                }
+        ]
+}

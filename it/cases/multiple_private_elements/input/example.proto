@@ -1,0 +1,135 @@
+/*
+Copyright (c) 2026 Red Hat, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+the License. You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+specific language governing permissions and limitations under the License.
+*/
+
+syntax = "proto3";
+
+package fulfillment.v1;
+
+import "cleanapi/cleanapi.proto";
+
+option (cleanapi.file).package = "public.v1";
+
+// Message with many fields, some private.
+message HostDetails {
+  string id = 1;
+  string name = 2;
+  string internal_field1 = 3 [(cleanapi.field).private = true];
+  string internal_field2 = 4 [(cleanapi.field).private = true];
+  string internal_field3 = 5 [(cleanapi.field).private = true];
+  string public_description = 6;
+  string secret_field1 = 7 [(cleanapi.field).private = true];
+  string secret_field2 = 8 [(cleanapi.field).private = true];
+  string status = 9;
+}
+
+// Several consecutive private messages.
+message PublicMessage1 {
+  string value = 1;
+}
+
+message PrivateMessage1 {
+  option (cleanapi.message).private = true;
+  string data = 1;
+}
+
+message PrivateMessage2 {
+  option (cleanapi.message).private = true;
+  string data = 1;
+}
+
+message PrivateMessage3 {
+  option (cleanapi.message).private = true;
+  string data = 1;
+}
+
+message PublicMessage2 {
+  string value = 1;
+}
+
+// Enum with multiple consecutive private values.
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_ACTIVE = 1;
+  STATUS_INTERNAL1 = 2 [(cleanapi.value).private = true];
+  STATUS_INTERNAL2 = 3 [(cleanapi.value).private = true];
+  STATUS_INTERNAL3 = 4 [(cleanapi.value).private = true];
+  STATUS_INACTIVE = 5;
+  STATUS_DEBUG1 = 6 [(cleanapi.value).private = true];
+  STATUS_DEBUG2 = 7 [(cleanapi.value).private = true];
+  STATUS_PENDING = 8;
+}
+
+// Multiple consecutive private enums.
+enum PublicEnum1 {
+  PUBLIC_ENUM1_UNSPECIFIED = 0;
+  PUBLIC_ENUM1_VALUE = 1;
+}
+
+enum PrivateEnum1 {
+  option (cleanapi.enum).private = true;
+  PRIVATE_ENUM1_UNSPECIFIED = 0;
+  PRIVATE_ENUM1_VALUE = 1;
+}
+
+enum PrivateEnum2 {
+  option (cleanapi.enum).private = true;
+  PRIVATE_ENUM2_UNSPECIFIED = 0;
+  PRIVATE_ENUM2_VALUE = 1;
+}
+
+enum PublicEnum2 {
+  PUBLIC_ENUM2_UNSPECIFIED = 0;
+  PUBLIC_ENUM2_VALUE = 1;
+}
+
+// Service with multiple consecutive private methods.
+service HostService {
+  rpc GetHost(PublicMessage1) returns (PublicMessage1);
+  rpc InternalMethod1(PublicMessage1) returns (PublicMessage2) {
+    option (cleanapi.method).private = true;
+  }
+  rpc InternalMethod2(PublicMessage1) returns (PublicMessage2) {
+    option (cleanapi.method).private = true;
+  }
+  rpc InternalMethod3(PublicMessage1) returns (PublicMessage2) {
+    option (cleanapi.method).private = true;
+  }
+  rpc ListHosts(PublicMessage1) returns (PublicMessage2);
+  rpc DebugMethod1(PublicMessage1) returns (PublicMessage2) {
+    option (cleanapi.method).private = true;
+  }
+  rpc DebugMethod2(PublicMessage1) returns (PublicMessage2) {
+    option (cleanapi.method).private = true;
+  }
+  rpc UpdateHost(PublicMessage2) returns (PublicMessage2);
+}
+
+// Multiple consecutive private services.
+service PublicService1 {
+  rpc DoSomething(PublicMessage1) returns (PublicMessage1);
+}
+
+service PrivateService1 {
+  option (cleanapi.service).private = true;
+  rpc InternalOp(PublicMessage1) returns (PublicMessage1);
+}
+
+service PrivateService2 {
+  option (cleanapi.service).private = true;
+  rpc InternalOp(PublicMessage1) returns (PublicMessage1);
+}
+
+service PublicService2 {
+  rpc DoSomethingElse(PublicMessage2) returns (PublicMessage2);
+}
+

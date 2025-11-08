@@ -1,0 +1,55 @@
+/*
+Copyright (c) 2026 Red Hat, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+the License. You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+specific language governing permissions and limitations under the License.
+*/
+
+syntax = "proto3";
+
+package services.v1;
+
+import "cleanapi/cleanapi.proto";
+import "types/v1/types.proto";
+
+option (cleanapi.file).package = "public_services.v1";
+
+// UserRequest is a request message that references a cross-package type.
+message UserRequest {
+  string user_id = 1;
+  // This field uses a type from the types.v1 package.
+  types.v1.Status expected_status = 2;
+  // Test repeated field with cross-package type.
+  repeated types.v1.Status allowed_statuses = 3;
+  // Test optional field with cross-package type.
+  optional types.v1.User requesting_user = 4;
+}
+
+// UserResponse is a response message that references a cross-package type.
+message UserResponse {
+  // This field uses a type from the types.v1 package.
+  types.v1.User user = 1;
+  types.v1.Status status = 2;
+  // Test repeated field with cross-package type.
+  repeated types.v1.User related_users = 3;
+  // Test map field with cross-package type as value.
+  map<string, types.v1.User> user_map = 4;
+  // Test map field with cross-package type as key (enum).
+  map<int32, types.v1.Status> status_map = 5;
+  string internal_debug_info = 6 [(cleanapi.field).private = true];
+}
+
+// UserService provides operations on users using cross-package types.
+service UserService {
+  rpc GetUser(UserRequest) returns (UserResponse);
+  rpc InternalDebug(UserRequest) returns (UserResponse) {
+    option (cleanapi.method).private = true;
+  }
+}
+
