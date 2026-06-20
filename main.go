@@ -22,11 +22,17 @@ import (
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
+	"github.com/spf13/pflag"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/pluginpb"
 
 	"github.com/jhernand/protoc-gen-cleanapi/internal/generator"
 )
+
+// version is the program version, intended to be set at build time using the Go linker flags. For example:
+//
+//	go build -ldflags="-X 'main.version=1.0.0'" .
+var version = "unknown"
 
 // Config contains the configuration loaded from environment variables. Note that these settings are only used for
 // debugging purposes, refrain from using them in production.
@@ -60,6 +66,16 @@ type Config struct {
 }
 
 func main() {
+	// Define and parse command line flags:
+	showVersion := pflag.Bool("version", false, "Print the version and exit.")
+	pflag.Parse()
+
+	// Handle the version flag:
+	if *showVersion {
+		fmt.Println(version)
+		os.Exit(0)
+	}
+
 	err := run()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
