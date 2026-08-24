@@ -34,12 +34,13 @@ const (
 )
 
 type FileOptions struct {
-	state                        protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Private           bool                   `protobuf:"varint,1,opt,name=private,proto3"`
-	xxx_hidden_Package           string                 `protobuf:"bytes,2,opt,name=package,proto3"`
-	xxx_hidden_RemoveHttpOptions bool                   `protobuf:"varint,3,opt,name=remove_http_options,json=removeHttpOptions,proto3"`
-	unknownFields                protoimpl.UnknownFields
-	sizeCache                    protoimpl.SizeCache
+	state                         protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Private            bool                   `protobuf:"varint,1,opt,name=private,proto3"`
+	xxx_hidden_Package            string                 `protobuf:"bytes,2,opt,name=package,proto3"`
+	xxx_hidden_RemoveHttpOptions  bool                   `protobuf:"varint,3,opt,name=remove_http_options,json=removeHttpOptions,proto3"`
+	xxx_hidden_HttpRoutePrefixMap string                 `protobuf:"bytes,4,opt,name=http_route_prefix_map,json=httpRoutePrefixMap,proto3"`
+	unknownFields                 protoimpl.UnknownFields
+	sizeCache                     protoimpl.SizeCache
 }
 
 func (x *FileOptions) Reset() {
@@ -88,6 +89,13 @@ func (x *FileOptions) GetRemoveHttpOptions() bool {
 	return false
 }
 
+func (x *FileOptions) GetHttpRoutePrefixMap() string {
+	if x != nil {
+		return x.xxx_hidden_HttpRoutePrefixMap
+	}
+	return ""
+}
+
 func (x *FileOptions) SetPrivate(v bool) {
 	x.xxx_hidden_Private = v
 }
@@ -100,6 +108,10 @@ func (x *FileOptions) SetRemoveHttpOptions(v bool) {
 	x.xxx_hidden_RemoveHttpOptions = v
 }
 
+func (x *FileOptions) SetHttpRoutePrefixMap(v string) {
+	x.xxx_hidden_HttpRoutePrefixMap = v
+}
+
 type FileOptions_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -109,6 +121,10 @@ type FileOptions_builder struct {
 	Package string
 	// When true, removes google.api.http annotations used for gRPC-to-REST transcoding.
 	RemoveHttpOptions bool
+	// Specifies HTTP route prefix remapping in the format "old_prefix:new_prefix".
+	// For example, "old:new" will rewrite all routes from "/api/old/*" to "/api/new/*".
+	// The replacement is done on the first occurrence of the old prefix in the route path.
+	HttpRoutePrefixMap string
 }
 
 func (b0 FileOptions_builder) Build() *FileOptions {
@@ -118,6 +134,7 @@ func (b0 FileOptions_builder) Build() *FileOptions {
 	x.xxx_hidden_Private = b.Private
 	x.xxx_hidden_Package = b.Package
 	x.xxx_hidden_RemoveHttpOptions = b.RemoveHttpOptions
+	x.xxx_hidden_HttpRoutePrefixMap = b.HttpRoutePrefixMap
 	return m0
 }
 
@@ -574,11 +591,12 @@ var File_cleanapi_cleanapi_proto protoreflect.FileDescriptor
 
 const file_cleanapi_cleanapi_proto_rawDesc = "" +
 	"\n" +
-	"\x17cleanapi/cleanapi.proto\x12\bcleanapi\x1a google/protobuf/descriptor.proto\"q\n" +
+	"\x17cleanapi/cleanapi.proto\x12\bcleanapi\x1a google/protobuf/descriptor.proto\"\xa4\x01\n" +
 	"\vFileOptions\x12\x18\n" +
 	"\aprivate\x18\x01 \x01(\bR\aprivate\x12\x18\n" +
 	"\apackage\x18\x02 \x01(\tR\apackage\x12.\n" +
-	"\x13remove_http_options\x18\x03 \x01(\bR\x11removeHttpOptions\"*\n" +
+	"\x13remove_http_options\x18\x03 \x01(\bR\x11removeHttpOptions\x121\n" +
+	"\x15http_route_prefix_map\x18\x04 \x01(\tR\x12httpRoutePrefixMap\"*\n" +
 	"\x0eMessageOptions\x12\x18\n" +
 	"\aprivate\x18\x01 \x01(\bR\aprivate\"(\n" +
 	"\fFieldOptions\x12\x18\n" +

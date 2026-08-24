@@ -239,4 +239,8 @@ var _ = DescribeTable(
 		"Oneof with private field",
 		"oneof_with_private_field",
 	),
+	Entry(
+		"HTTP route prefix remapping",
+		"http_route_prefix_remapping",
+	),
 )
