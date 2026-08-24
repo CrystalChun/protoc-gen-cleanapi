@@ -246,7 +246,14 @@ func (o *Object) processContent(desc *descriptorpb.FileDescriptorProto, file str
 	// Remove imports that reference private files.
 	content = o.removePrivateFileImports(content, desc)
 
-	// Remove HTTP transcoding options if requested:
+	// Remap HTTP route prefixes if specified:
+	content, err = o.remapHttpRoutePrefixes(content, desc)
+	if err != nil {
+		err = fmt.Errorf("failed to remap HTTP route prefixes in file '%s': %w", file, err)
+		return
+	}
+
+	// Remove HTTP transcoding options if requested (after remapping):
 	if o.shouldRemoveHttpOptions(desc) {
 		content = o.removeHttpOptions(content)
 	}
@@ -883,6 +890,75 @@ func (o *Object) formatContent(content string) string {
 	}
 
 	return output
+}
+
+// getHttpRoutePrefixMap extracts the HTTP route prefix mapping from the file-level annotation.
+// Returns empty strings if no mapping is specified.
+func (o *Object) getHttpRoutePrefixMap(file *descriptorpb.FileDescriptorProto) (oldPrefix, newPrefix string) {
+	if file.Options == nil {
+		return "", ""
+	}
+	extension := proto.GetExtension(file.Options, cleanapi.E_File)
+	if extension != nil {
+		fileOptions, ok := extension.(*cleanapi.FileOptions)
+		if ok {
+			mapping := fileOptions.GetHttpRoutePrefixMap()
+			if mapping != "" {
+				parts := strings.SplitN(mapping, ":", 2)
+				if len(parts) == 2 {
+					oldPrefix = strings.TrimSpace(parts[0])
+					newPrefix = strings.TrimSpace(parts[1])
+					o.logger.Debug(
+						"Found HTTP route prefix mapping",
+						slog.String("file", file.GetName()),
+						slog.String("old_prefix", oldPrefix),
+						slog.String("new_prefix", newPrefix),
+					)
+					return oldPrefix, newPrefix
+				}
+			}
+		}
+	}
+	return "", ""
+}
+
+// remapHttpRoutePrefixes transforms HTTP route paths by replacing the old prefix with the new prefix.
+// For example, "/api/old/v1/..." becomes "/api/new/v1/..." when mapping "old:new".
+func (o *Object) remapHttpRoutePrefixes(content string, file *descriptorpb.FileDescriptorProto) (result string, err error) {
+	oldPrefix, newPrefix := o.getHttpRoutePrefixMap(file)
+	if oldPrefix == "" || newPrefix == "" {
+		// No mapping specified, return content unchanged
+		return content, nil
+	}
+
+	// Build the regex pattern to match route paths within HTTP options
+	// This matches patterns like: get: "/api/old/v1/path"
+	// We'll match the HTTP method keywords and capture the route path
+	httpMethods := []string{"get", "post", "put", "patch", "delete"}
+
+	for _, method := range httpMethods {
+		// Pattern matches: method: "/api/oldPrefix/..." or method:"/api/oldPrefix/..."
+		pattern := fmt.Sprintf(`(%s\s*:\s*")(/api/)%s(/[^"]*")`, method, regexp.QuoteMeta(oldPrefix))
+		regex, err := regexp.Compile(pattern)
+		if err != nil {
+			return "", fmt.Errorf("failed to compile regex for HTTP method '%s': %w", method, err)
+		}
+
+		// Replace oldPrefix with newPrefix in the route path
+		// $1 = "method: "" or "method:"", $2 = "/api/", $3 = "/v1/..."
+		replacement := fmt.Sprintf("${1}${2}%s${3}", newPrefix)
+		content = regex.ReplaceAllString(content, replacement)
+	}
+
+	o.logger.Debug(
+		"Remapped HTTP route prefixes",
+		slog.String("file", file.GetName()),
+		slog.String("old_prefix", oldPrefix),
+		slog.String("new_prefix", newPrefix),
+	)
+
+	result = content
+	return result, nil
 }
 
 // Tags for various fields using in the paths used to access source code information. Thse can be found in

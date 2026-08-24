@@ -26,6 +26,11 @@ message FileOptions {
 
   // When true, removes google.api.http annotations used for gRPC-to-REST transcoding.
   bool remove_http_options = 3;
+
+  // Specifies HTTP route prefix remapping in the format "old_prefix:new_prefix".
+  // For example, "old:new" will rewrite all routes from "/api/old/*" to "/api/new/*".
+  // The replacement is done on the first occurrence of the old prefix in the route path.
+  string http_route_prefix_map = 4;
 }
 
 message MessageOptions {
