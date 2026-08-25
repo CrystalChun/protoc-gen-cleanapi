@@ -243,4 +243,8 @@ var _ = DescribeTable(
 		"HTTP route prefix remapping",
 		"http_route_prefix_remapping",
 	),
+	Entry(
+		"Unused import removal",
+		"unused_import_removal",
+	),
 )

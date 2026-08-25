@@ -42,6 +42,7 @@ type Object struct {
 	protoRoot        string
 	packageRenames   map[string]string
 	privateFileNames map[string]bool
+	allProtoFiles    map[string]*descriptorpb.FileDescriptorProto
 }
 
 // New creates a new generator builder.
@@ -92,6 +93,12 @@ func (o *Object) Generate(request *pluginpb.CodeGeneratorRequest) (response *plu
 
 	// Initialize the discovered package mappings map.
 	o.packageRenames = make(map[string]string)
+
+	// Initialize the all proto files map for type reference checking.
+	o.allProtoFiles = make(map[string]*descriptorpb.FileDescriptorProto)
+	for _, file := range request.ProtoFile {
+		o.allProtoFiles[file.GetName()] = file
+	}
 
 	// First pass: discover all package mappings and collect private file names.
 	o.privateFileNames = make(map[string]bool)
@@ -245,6 +252,9 @@ func (o *Object) processContent(desc *descriptorpb.FileDescriptorProto, file str
 
 	// Remove imports that reference private files.
 	content = o.removePrivateFileImports(content, desc)
+
+	// Remove imports that are no longer used after removing private elements.
+	content = o.removeUnusedImports(content, desc)
 
 	// Remap HTTP route prefixes if specified:
 	content, err = o.remapHttpRoutePrefixes(content, desc)
@@ -746,6 +756,126 @@ func (o *Object) removePrivateFileImports(content string, desc *descriptorpb.Fil
 		}
 	}
 	return strings.Join(result, "\n")
+}
+
+// removeUnusedImports removes import statements for files whose types are no longer referenced in the content.
+// This handles cases where a type from an imported file was only used in private fields that have been removed.
+func (o *Object) removeUnusedImports(content string, desc *descriptorpb.FileDescriptorProto) string {
+	// Extract import statements and check if any types from those imports are referenced in the content
+	lines := strings.Split(content, "\n")
+	var result []string
+
+	// Pattern to match import statements
+	importRegex := regexp.MustCompile(`import\s+"([^"]+)";`)
+
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+
+		// Check if this is an import line
+		matches := importRegex.FindStringSubmatch(trimmed)
+		if len(matches) > 1 {
+			importPath := matches[1]
+
+			// Skip if this is a standard proto import or cleanapi import (already handled elsewhere)
+			if strings.Contains(importPath, "google/") || strings.Contains(importPath, "cleanapi/") {
+				result = append(result, line)
+				continue
+			}
+
+			// Extract the base name of the file (without .proto extension) to look for type references
+			// For example, "conditions.proto" -> "Conditions" or similar types
+			baseName := filepath.Base(importPath)
+			baseName = strings.TrimSuffix(baseName, ".proto")
+
+			// Check if any types from this import are referenced in the content
+			// We need to find the imported file's types - for now, use a heuristic:
+			// if there's any reference to types that could be from this file
+			importUsed := o.isImportUsed(content, importPath, desc)
+
+			if importUsed {
+				result = append(result, line)
+			} else {
+				o.logger.Debug(
+					"Removing unused import",
+					slog.String("file", desc.GetName()),
+					slog.String("import", importPath),
+				)
+			}
+		} else {
+			result = append(result, line)
+		}
+	}
+
+	return strings.Join(result, "\n")
+}
+
+// isImportUsed checks if any types from the imported file are referenced in the content.
+func (o *Object) isImportUsed(content string, importPath string, currentFile *descriptorpb.FileDescriptorProto) bool {
+	// Find the imported file descriptor
+	importedFile, exists := o.allProtoFiles[importPath]
+	if !exists {
+		// If we can't find the imported file, conservatively keep the import
+		o.logger.Debug(
+			"Could not find imported file descriptor, keeping import",
+			slog.String("file", currentFile.GetName()),
+			slog.String("import", importPath),
+		)
+		return true
+	}
+
+	// Collect all type names defined in the imported file
+	var typeNames []string
+
+	// Add message types
+	for _, msg := range importedFile.MessageType {
+		typeNames = append(typeNames, msg.GetName())
+		// Also add nested types
+		typeNames = append(typeNames, o.collectNestedTypeNames(msg)...)
+	}
+
+	// Add enum types
+	for _, enum := range importedFile.EnumType {
+		typeNames = append(typeNames, enum.GetName())
+	}
+
+	// Check if any of these types are referenced in the content
+	// We need to check for the type name as a word boundary to avoid false positives
+	for _, typeName := range typeNames {
+		// Create a regex pattern that matches the type name as a complete word
+		// This handles cases like "Conditions field_name" or "repeated Conditions"
+		pattern := fmt.Sprintf(`\b%s\b`, regexp.QuoteMeta(typeName))
+		matched, err := regexp.MatchString(pattern, content)
+		if err != nil {
+			o.logger.Warn(
+				"Failed to check type reference",
+				slog.String("type", typeName),
+				slog.Any("error", err),
+			)
+			continue
+		}
+		if matched {
+			o.logger.Debug(
+				"Import is used",
+				slog.String("file", currentFile.GetName()),
+				slog.String("import", importPath),
+				slog.String("referenced_type", typeName),
+			)
+			return true
+		}
+	}
+
+	// No types from the imported file are referenced
+	return false
+}
+
+// collectNestedTypeNames recursively collects names of nested message types.
+func (o *Object) collectNestedTypeNames(msg *descriptorpb.DescriptorProto) []string {
+	var names []string
+	for _, nested := range msg.NestedType {
+		names = append(names, nested.GetName())
+		names = append(names, o.collectNestedTypeNames(nested)...)
+	}
+	return names
 }
 
 // removeHttpOptions removes google.api.http option blocks from the content. These can be single-line or multi-line
