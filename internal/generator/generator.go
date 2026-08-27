@@ -776,20 +776,13 @@ func (o *Object) removeUnusedImports(content string, desc *descriptorpb.FileDesc
 		if len(matches) > 1 {
 			importPath := matches[1]
 
-			// Skip if this is a standard proto import or cleanapi import (already handled elsewhere)
-			if strings.Contains(importPath, "google/") || strings.Contains(importPath, "cleanapi/") {
+			// Skip cleanapi import (already handled by removePrivateOptionsImport)
+			if strings.Contains(importPath, "cleanapi/") {
 				result = append(result, line)
 				continue
 			}
 
-			// Extract the base name of the file (without .proto extension) to look for type references
-			// For example, "conditions.proto" -> "Conditions" or similar types
-			baseName := filepath.Base(importPath)
-			baseName = strings.TrimSuffix(baseName, ".proto")
-
 			// Check if any types from this import are referenced in the content
-			// We need to find the imported file's types - for now, use a heuristic:
-			// if there's any reference to types that could be from this file
 			importUsed := o.isImportUsed(content, importPath, desc)
 
 			if importUsed {
